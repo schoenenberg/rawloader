@@ -88,11 +88,11 @@ pub struct NefDecoder<'a> {
 }
 
 impl<'a> NefDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> NefDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> NefDecoder<'a> {
     NefDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -106,7 +106,7 @@ impl<'a> Decoder for NefDecoder<'a> {
     let compression = fetch_tag!(raw, Tag::Compression).get_usize(0);
 
     // Make sure we always use a 12/14 bit mode to get correct white/blackpoints
-    let mode = format!("{}bit", bps).to_string();
+    let mode = format!("{}bit", bps);
     let camera = self.rawloader.check_supported_with_mode(&self.tiff, &mode)?;
 
     let offset = fetch_tag!(raw, Tag::StripOffsets).get_usize(0);
@@ -131,7 +131,7 @@ impl<'a> Decoder for NefDecoder<'a> {
           } else {
             decode_12be(src, width, height, dummy)
           },
-          x => return Err(format!("Don't know uncompressed bps {}", x).to_string()),
+          x => return Err(format!("Don't know uncompressed bps {}", x)),
         }
       } else if size == width*height*3 {
         cpp = 3;
@@ -139,7 +139,7 @@ impl<'a> Decoder for NefDecoder<'a> {
       } else if compression == 34713 {
         self.decode_compressed(src, width, height, bps, dummy)?
       } else {
-        return Err(format!("NEF: Don't know compression {}", compression).to_string())
+        return Err(format!("NEF: Don't know compression {}", compression))
       }
     };
 
@@ -204,7 +204,7 @@ impl<'a> NefDecoder<'a> {
           Ok([BEu16(&buf, off) as f32, BEu16(&buf, off+2) as f32,
               BEu16(&buf, off+6) as f32, NAN])
         },
-        x => Err(format!("NEF: Don't know about WB version 0x{:x}", x).to_string()),
+        x => Err(format!("NEF: Don't know about WB version 0x{:x}", x)),
       }
     } else {
       Err("NEF: Don't know how to fetch WB".to_string())
@@ -308,7 +308,7 @@ impl<'a> NefDecoder<'a> {
           pred_left1 += htable.huff_decode(&mut pump)?;
           pred_left2 += htable.huff_decode(&mut pump)?;
         }
-        out[row*width+col+0] = curve.dither(clampbits(pred_left1,15) as u16, &mut random);
+        out[row*width+col] = curve.dither(clampbits(pred_left1,15) as u16, &mut random);
         out[row*width+col+1] = curve.dither(clampbits(pred_left2,15) as u16, &mut random);
       }
     }
@@ -340,17 +340,17 @@ impl<'a> NefDecoder<'a> {
         let cb = (g4 | ((g5 & 0x0f) << 8)) as f32 - 2048.0;
         let cr = ((g5 >> 4) | (g6 << 4)) as f32 - 2048.0;
 
-        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370705 * cr) as i32, 12) as u16, &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        let r = SNEF_CURVE.dither(clampbits((y1 + 1.370_705 * cr) as i32, 12) as u16, &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y1 - 0.337_633 * cb - 0.698_001 * cr) as i32, 12) as u16, &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y1 + 1.732_446 * cb) as i32, 12) as u16, &mut random);
         // invert the white balance
         o[0] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
         o[1] = g;
         o[2] = clampbits((inv_wb_b * b as i32 + (1<<9)) >> 10, 15) as u16;
 
-        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370705 * cr) as i32, 12) as u16, &mut random);
-        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337633 * cb - 0.698001 * cr) as i32, 12) as u16, &mut random);
-        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732446 * cb) as i32, 12) as u16, &mut random);
+        let r = SNEF_CURVE.dither(clampbits((y2 + 1.370_705 * cr) as i32, 12) as u16, &mut random);
+        let g = SNEF_CURVE.dither(clampbits((y2 - 0.337_633 * cb - 0.698_001 * cr) as i32, 12) as u16, &mut random);
+        let b = SNEF_CURVE.dither(clampbits((y2 + 1.732_446 * cb) as i32, 12) as u16, &mut random);
         // invert the white balance
         o[3] = clampbits((inv_wb_r * r as i32 + (1<<9)) >> 10, 15) as u16;
         o[4] = g;

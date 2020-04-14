@@ -12,11 +12,11 @@ pub struct KdcDecoder<'a> {
 }
 
 impl<'a> KdcDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> KdcDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> KdcDecoder<'a> {
     KdcDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -33,7 +33,7 @@ impl<'a> Decoder for KdcDecoder<'a> {
       let src = &self.buffer[off..];
       let image = match fetch_tag!(raw, Tag::Compression).get_usize(0) {
         1 => Self::decode_dc120(src, width, height, dummy),
-        c => return Err(format!("KDC: DC120: Don't know how to handle compression type {}", c).to_string())
+        c => return Err(format!("KDC: DC120: Don't know how to handle compression type {}", c))
       };
 
       return ok_image(camera, width, height, [NAN, NAN, NAN, NAN], image)

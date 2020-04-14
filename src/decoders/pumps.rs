@@ -120,7 +120,7 @@ impl<'a> BitPump for BitPumpLSB<'a> {
       self.pos += 4;
       self.nbits += 32;
     }
-    (self.bits & (0x0ffffffffu64 >> (32-num))) as u32
+    (self.bits & (0xffff_ffffu64 >> (32-num))) as u32
   }
 
   fn consume_bits(&mut self, num: u32) {

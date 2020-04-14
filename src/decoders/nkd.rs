@@ -10,11 +10,11 @@ pub struct NakedDecoder<'a> {
 }
 
 impl<'a> NakedDecoder<'a> {
-  pub fn new(buf: &'a [u8], cam: Camera, rawloader: &'a RawLoader) -> NakedDecoder<'a> {
+  pub fn new(buffer: &'a [u8], camera: Camera, rawloader: &'a RawLoader) -> NakedDecoder<'a> {
     NakedDecoder {
-      buffer: buf,
-      camera: cam,
-      rawloader: rawloader,
+      buffer,
+      camera,
+      rawloader,
     }
   }
 }
@@ -32,7 +32,7 @@ impl<'a> Decoder for NakedDecoder<'a> {
       match bits {
         10 => decode_10le_lsb16(self.buffer, width, height, dummy),
         12 => decode_12be_msb16(self.buffer, width, height, dummy),
-        _  => return Err(format!("Naked: Don't know about {} bps images", bits).to_string()),
+        _  => return Err(format!("Naked: Don't know about {} bps images", bits)),
       }
     };
 

@@ -13,11 +13,11 @@ pub struct TfrDecoder<'a> {
 }
 
 impl<'a> TfrDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> TfrDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> TfrDecoder<'a> {
     TfrDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }

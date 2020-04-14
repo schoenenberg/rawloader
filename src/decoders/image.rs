@@ -144,9 +144,9 @@ impl RawImage {
   pub fn neutralwb(&self) -> [f32;4] {
     let rgb_to_xyz = [
     // sRGB D65
-      [ 0.412453, 0.357580, 0.180423 ],
-      [ 0.212671, 0.715160, 0.072169 ],
-      [ 0.019334, 0.119193, 0.950227 ],
+      [ 0.412_453, 0.357_580, 0.180_423 ],
+      [ 0.212_671, 0.715_160, 0.072_169 ],
+      [ 0.019_334, 0.119_193, 0.950_227 ],
     ];
 
     // Multiply RGB matrix
@@ -170,7 +170,7 @@ impl RawImage {
     }
 
     [neutralwb[0]/neutralwb[1],
-     neutralwb[1]/neutralwb[1],
+     /*neutralwb[1]/neutralwb[1]*/1.0,
      neutralwb[2]/neutralwb[1],
      neutralwb[3]/neutralwb[1]]
   }

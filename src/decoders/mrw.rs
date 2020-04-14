@@ -5,7 +5,7 @@ use crate::decoders::tiff::*;
 use crate::decoders::basics::*;
 
 pub fn is_mrw(buf: &[u8]) -> bool {
-  BEu32(buf,0) == 0x004D524D
+  BEu32(buf,0) == 0x004D_524D
 }
 
 #[derive(Debug, Clone)]
@@ -36,17 +36,17 @@ impl<'a> MrwDecoder<'a> {
       let len: u32 = BEu32(buf,currpos+4);
       
       match tag {
-        0x505244 => { // PRD
+        0x50_5244 => { // PRD
           raw_height = BEu16(buf,currpos+16) as usize;
           raw_width = BEu16(buf,currpos+18) as usize;
           packed = buf[currpos+24] == 12;
         }
-        0x574247 => { // WBG
+        0x57_4247 => { // WBG
           for i in 0..4 {
             wb_vals[i] = BEu16(buf, currpos+12+i*2);
           }
         }
-        0x545457 => { // TTW
+        0x54_5457 => { // TTW
           // Base value for offsets needs to be at the beginning of the 
           // TIFF block, not the file
           tiffpos = currpos+8;
@@ -58,13 +58,13 @@ impl<'a> MrwDecoder<'a> {
 
     MrwDecoder { 
       buffer: buf,
-      data_offset: data_offset,
-      raw_width: raw_width,
-      raw_height: raw_height,
-      packed: packed,
-      wb_vals: wb_vals,
+      data_offset,
+      raw_width,
+      raw_height,
+      packed,
+      wb_vals,
       tiff: TiffIFD::new(&buf[tiffpos..], 8, 0, 0, 0, BIG_ENDIAN).unwrap(),
-      rawloader: rawloader,
+      rawloader,
     }
   }
 }

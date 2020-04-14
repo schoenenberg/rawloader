@@ -12,11 +12,11 @@ pub struct IiqDecoder<'a> {
 }
 
 impl<'a> IiqDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> IiqDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> IiqDecoder<'a> {
     IiqDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -50,7 +50,7 @@ impl<'a> Decoder for IiqDecoder<'a> {
       }
     }
 
-    if width <= 0 || height <= 0 {
+    if width == 0 || height == 0 {
       return Err("IIQ: couldn't find width and height".to_string())
     }
 
@@ -76,7 +76,7 @@ impl<'a> IiqDecoder<'a> {
       let mut pred = [0 as u32; 2];
       let mut len = [0 as u32; 2];
       for (col, pixout) in out.chunks_exact_mut(1).enumerate() {
-        if col >= (width & 0xfffffff8) {
+        if col >= (width & 0xffff_fff8) {
           len[0] = 14;
           len[1] = 14;
         } else if col&7 == 0 {

@@ -28,7 +28,7 @@ impl CrwHuffTable {
 
     let mut h = 0;
     let mut pos = 16;
-    for len in 1..(max+1) {
+    for len in 1..=max {
       for _ in 0..source[(len-1) as usize] {
         for _ in 0..(1 << (max-len)) {
           if h <= (1 << max) {
@@ -42,7 +42,7 @@ impl CrwHuffTable {
 
     CrwHuffTable {
       nbits: max,
-      tbl: tbl,
+      tbl,
     }
   }
 
@@ -128,11 +128,11 @@ pub struct CrwDecoder<'a> {
 }
 
 impl<'a> CrwDecoder<'a> {
-  pub fn new(buf: &'a [u8], ciff: CiffIFD<'a>, rawloader: &'a RawLoader) -> CrwDecoder<'a> {
+  pub fn new(buffer: &'a [u8], ciff: CiffIFD<'a>, rawloader: &'a RawLoader) -> CrwDecoder<'a> {
     CrwDecoder {
-      buffer: buf,
-      ciff: ciff,
-      rawloader: rawloader,
+      buffer,
+      ciff,
+      rawloader,
     }
   }
 }
@@ -163,7 +163,7 @@ impl<'a> CrwDecoder<'a> {
   fn get_wb(&self, cam: &Camera) -> Result<[f32;4], String> {
     if let Some(levels) = self.ciff.find_entry(CiffTag::WhiteBalance) {
       let offset = cam.wb_offset;
-      return Ok([levels.get_f32(offset+0), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
+      return Ok([levels.get_f32(offset), levels.get_f32(offset+1), levels.get_f32(offset+3), NAN])
     }
     if !cam.find_hint("nocinfo2") {
       if let Some(cinfo) = self.ciff.find_entry(CiffTag::ColorInfo2) {
@@ -194,7 +194,7 @@ impl<'a> CrwDecoder<'a> {
     let lowbits = !cam.find_hint("nolowbits");
     let dectable = fetch_tag!(self.ciff, CiffTag::DecoderTable).get_usize(0);
     if dectable > 2 {
-      return Err(format!("CRW: Unknown decoder table {}", dectable).to_string())
+      return Err(format!("CRW: Unknown decoder table {}", dectable))
     }
     Ok(Self::do_decode(&self.buffer, lowbits, dectable, width, height, dummy))
   }
@@ -202,7 +202,7 @@ impl<'a> CrwDecoder<'a> {
   pub(crate) fn do_decode(buffer: &[u8], lowbits: bool, dectable: usize, width: usize, height: usize, dummy: bool) -> Vec<u16> {
     let mut out = alloc_image!(width, height, dummy);
 
-    let ref htables = CRW_HUFF_TABLES[dectable];
+    let htables = &CRW_HUFF_TABLES[dectable];
     let offset = 540 + (lowbits as usize)*height*width/4;
     let mut pump = BitPumpJPEG::new(&buffer[offset..]);
 
@@ -214,7 +214,7 @@ impl<'a> CrwDecoder<'a> {
       let mut diffbuf = [0 as i32; 64];
       let mut i: usize = 0;
       while i < 64 {
-        let ref tbl = htables[(i > 0) as usize];
+        let tbl = &htables[(i > 0) as usize];
         let leaf = tbl.get_bits(&mut pump);
         if leaf == 0 && i != 0 { break; }
         if leaf == 0xff { i+= 1; continue; }

@@ -12,11 +12,11 @@ pub struct Rw2Decoder<'a> {
 }
 
 impl<'a> Rw2Decoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> Rw2Decoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> Rw2Decoder<'a> {
     Rw2Decoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -27,7 +27,7 @@ impl<'a> Decoder for Rw2Decoder<'a> {
     let height: usize;
     let image = {
       let data = self.tiff.find_ifds_with_tag(Tag::PanaOffsets);
-      if data.len() > 0 {
+      if !data.is_empty() {
         let raw = data[0];
         width = fetch_tag!(raw, Tag::PanaWidth).get_usize(0);
         height = fetch_tag!(raw, Tag::PanaLength).get_usize(0);
@@ -141,7 +141,7 @@ impl<'a> BitPumpPanasonic<'a> {
       buffer: src,
       pos: 0,
       nbits: 0,
-      split: split,
+      split,
     }
   }
 }
@@ -157,7 +157,7 @@ impl<'a> BitPump for BitPumpPanasonic<'a> {
       byte = (byte + 0x4000 - 0x2008) % 0x4000;
     }
     let bits = LEu16(self.buffer, byte as usize + self.pos - 0x4000) as u32;
-    (bits >> ((self.nbits-num) & 7)) & (0x0ffffffffu32 >> (32-num))
+    (bits >> ((self.nbits-num) & 7)) & (0x0_ffff_ffffu32 >> (32-num))
   }
 
   fn consume_bits(&mut self, num: u32) {

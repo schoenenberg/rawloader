@@ -19,7 +19,7 @@ pub struct Endian {
 }
 
 impl Endian {
-  pub fn ri32(&self, buf: &[u8], pos: usize) -> i32 {
+  pub fn ri32(self, buf: &[u8], pos: usize) -> i32 {
     if self.big {
       BEi32(buf,pos)
     } else {
@@ -27,7 +27,7 @@ impl Endian {
     }
   }
 
-  pub fn ru32(&self, buf: &[u8], pos: usize) -> u32 {
+  pub fn ru32(self, buf: &[u8], pos: usize) -> u32 {
     if self.big {
       BEu32(buf,pos)
     } else {
@@ -35,7 +35,7 @@ impl Endian {
     }
   }
 
-  pub fn ru16(&self, buf: &[u8], pos: usize) -> u16 {
+  pub fn ru16(self, buf: &[u8], pos: usize) -> u16 {
     if self.big {
       BEu16(buf,pos)
     } else {
@@ -43,7 +43,7 @@ impl Endian {
     }
   }
 
-  pub fn little(&self) -> bool { !self.big }
+  pub fn little(self) -> bool { !self.big }
 }
 
 pub static BIG_ENDIAN: Endian = Endian{big: true};

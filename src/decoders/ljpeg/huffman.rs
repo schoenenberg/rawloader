@@ -39,22 +39,22 @@ use crate::decoders::basics::*;
 
 const BIG_TABLE_BITS: u32 = 13;
 
-const HUFF_BITMASK: [u32;32] = [0xffffffff, 0x7fffffff,
-                                0x3fffffff, 0x1fffffff,
-                                0x0fffffff, 0x07ffffff,
-                                0x03ffffff, 0x01ffffff,
-                                0x00ffffff, 0x007fffff,
-                                0x003fffff, 0x001fffff,
-                                0x000fffff, 0x0007ffff,
-                                0x0003ffff, 0x0001ffff,
-                                0x0000ffff, 0x00007fff,
-                                0x00003fff, 0x00001fff,
-                                0x00000fff, 0x000007ff,
-                                0x000003ff, 0x000001ff,
-                                0x000000ff, 0x0000007f,
-                                0x0000003f, 0x0000001f,
-                                0x0000000f, 0x00000007,
-                                0x00000003, 0x00000001];
+const HUFF_BITMASK: [u32;32] = [0xffff_ffff, 0x7fff_ffff,
+                                0x3fff_ffff, 0x1fff_ffff,
+                                0x0fff_ffff, 0x07ff_ffff,
+                                0x03ff_ffff, 0x01ff_ffff,
+                                0x00ff_ffff, 0x007f_ffff,
+                                0x003f_ffff, 0x001f_ffff,
+                                0x000f_ffff, 0x0007_ffff,
+                                0x0003_ffff, 0x0001_ffff,
+                                0x0000_ffff, 0x0000_7fff,
+                                0x0000_3fff, 0x0000_1fff,
+                                0x0000_0fff, 0x0000_07ff,
+                                0x0000_03ff, 0x0000_01ff,
+                                0x0000_00ff, 0x0000_007f,
+                                0x0000_003f, 0x0000_001f,
+                                0x0000_000f, 0x0000_0007,
+                                0x0000_0003, 0x0000_0001];
 
 pub struct HuffTable {
   // These two fields directly represent the contents of a JPEG DHT marker
@@ -84,7 +84,7 @@ impl HuffTable {
       valptr: [0;17],
       numbits: [0;256],
       bigtable: Vec::new(),
-      precision: precision,
+      precision,
       use_bigtable: true,
       dng_bug: false,
       initialized: false,
@@ -93,16 +93,16 @@ impl HuffTable {
 
   pub fn new(bits: [u32;17], huffval: [u32;256], precision: usize, dng_bug: bool) -> Result<HuffTable,String> {
     let mut tbl = HuffTable {
-      bits: bits,
-      huffval: huffval,
+      bits,
+      huffval,
       mincode: [0;17],
       maxcode: [0;18],
       valptr: [0;17],
       numbits: [0;256],
       bigtable: Vec::new(),
-      precision: precision,
+      precision,
       use_bigtable: true,
-      dng_bug: dng_bug,
+      dng_bug,
       initialized: false,
     };
     // Always use big table, haven't found a situation where it doesn't help
@@ -116,7 +116,7 @@ impl HuffTable {
     let mut p = 0;
     let mut huffsize: [u8;257] = [0;257];
     for l in 1..17 {
-      for _ in 1..((self.bits[l] as usize)+1) {
+      for _ in 1..=(self.bits[l] as usize) {
         huffsize[p] = l as u8;
         p += 1;
         if p > 256 {
@@ -188,7 +188,7 @@ impl HuffTable {
         if ul > 256 || ll > ul {
           return Err("ljpeg: Code length too long. Corrupt data.".to_string())
         }
-        for i in ll..(ul+1) {
+        for i in ll..=ul {
           self.numbits[i as usize] = (size as u32) | ((value as u32) << 4);
         }
       }
@@ -296,12 +296,12 @@ impl HuffTable {
 
     // With garbage input we may reach the sentinel value l = 17.
     if l > self.precision || self.valptr[l] == 0xff {
-      return Err(format!("ljpeg: bad Huffman code: {}", l).to_string())
+      Err(format!("ljpeg: bad Huffman code: {}", l))
     } else {
-      return Ok(self.huffval[
+      Ok(self.huffval[
         self.valptr[l] as usize +
         (code - (self.mincode[l] as usize)) as usize
-      ]);
+      ])
     }
   }
 

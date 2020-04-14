@@ -13,11 +13,11 @@ pub struct ArwDecoder<'a> {
 }
 
 impl<'a> ArwDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> ArwDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> ArwDecoder<'a> {
     ArwDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -26,7 +26,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
   fn image(&self, dummy: bool) -> Result<RawImage,String> {
     let camera = self.rawloader.check_supported(&self.tiff)?;
     let data = self.tiff.find_ifds_with_tag(Tag::StripOffsets);
-    if data.len() == 0 {
+    if data.is_empty() {
       if camera.model == "DSLR-A100" {
         return self.image_a100(camera, dummy)
       } else { // try decoding as SRF
@@ -83,7 +83,7 @@ impl<'a> Decoder for ArwDecoder<'a> {
           }
         }
       },
-      _ => return Err(format!("ARW: Don't know how to decode type {}", compression).to_string()),
+      _ => return Err(format!("ARW: Don't know how to decode type {}", compression)),
     };
 
     ok_image_with_black_white(camera, width, height, self.get_wb()?, black, white, image)
@@ -96,7 +96,7 @@ impl<'a> ArwDecoder<'a> {
     // between the simple sanity of the MRW custom format and the wordly
     // wonderfullness of the Tiff-based ARW format, let's shoot from the hip
     let data = self.tiff.find_ifds_with_tag(Tag::SubIFDs);
-    if data.len() == 0 {
+    if data.is_empty() {
       return Err("ARW: Couldn't find the data IFD!".to_string())
     }
     let raw = data[0];
@@ -116,7 +116,7 @@ impl<'a> ArwDecoder<'a> {
     while currpos+20 < buf.len() {
       let tag: u32 = BEu32(buf,currpos);
       let len: usize = LEu32(buf,currpos+4) as usize;
-      if tag == 0x574247 { // WBG
+      if tag == 0x57_4247 { // WBG
         wb_coeffs[0] = LEu16(buf, currpos+12) as f32;
         wb_coeffs[1] = LEu16(buf, currpos+14) as f32;
         wb_coeffs[2] = LEu16(buf, currpos+18) as f32;
@@ -130,7 +130,7 @@ impl<'a> ArwDecoder<'a> {
 
   fn image_srf(&self, camera: Camera, dummy: bool) -> Result<RawImage,String> {
     let data = self.tiff.find_ifds_with_tag(Tag::ImageWidth);
-    if data.len() == 0 {
+    if data.is_empty() {
       return Err("ARW: Couldn't find the data IFD!".to_string())
     }
     let raw = data[0];
@@ -144,9 +144,9 @@ impl<'a> ArwDecoder<'a> {
       let len = width*height*2;
 
       // Constants taken from dcraw
-      let off: usize = 862144;
-      let key_off: usize = 200896;
-      let head_off: usize = 164600;
+      let off: usize = 862_144;
+      let key_off: usize = 200_896;
+      let head_off: usize = 164_600;
 
       // Replicate the dcraw contortions to get the "decryption" key
       let offset = (self.buffer[key_off] as usize)*4;
@@ -237,11 +237,9 @@ impl<'a> ArwDecoder<'a> {
     let decrypted_tiff = TiffIFD::new(&decrypted_buf, 0, sony_offset, 0, 0, LITTLE_ENDIAN).unwrap();
     let grgb_levels = decrypted_tiff.find_entry(Tag::SonyGRBG);
     let rggb_levels = decrypted_tiff.find_entry(Tag::SonyRGGB);
-    if grgb_levels.is_some() {
-      let levels = grgb_levels.unwrap();
+    if let Some(levels) = grgb_levels {
       Ok([levels.get_u32(1) as f32, levels.get_u32(0) as f32, levels.get_u32(2) as f32, NAN])
-    } else if rggb_levels.is_some() {
-      let levels = rggb_levels.unwrap();
+    } else if let Some(levels) = rggb_levels {
       Ok([levels.get_u32(0) as f32, levels.get_u32(1) as f32, levels.get_u32(3) as f32, NAN])
     } else {
       Err("ARW: Couldn't find GRGB or RGGB levels".to_string())
@@ -262,7 +260,7 @@ impl<'a> ArwDecoder<'a> {
   pub(crate) fn calculate_curve(curve: [usize;6]) -> LookupTable {
     let mut out = vec![0 as u16; curve[5]+1];
     for i in 0..5 {
-      for j in (curve[i]+1)..(curve[i+1]+1) {
+      for j in (curve[i]+1)..=curve[i+1] {
         out[j] = out[(j-1)] + (1<<i);
       }
     }
@@ -275,7 +273,7 @@ impl<'a> ArwDecoder<'a> {
     let mut mkey = key;
     // Initialize the decryption pad from the key
     for p in 0..4 {
-      mkey = mkey.wrapping_mul(48828125).wrapping_add(1);
+      mkey = mkey.wrapping_mul(48_828_125).wrapping_add(1);
       pad[p] = mkey;
     }
     pad[3] = pad[3] << 1 | (pad[0]^pad[2]) >> 31;

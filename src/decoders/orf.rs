@@ -1,5 +1,6 @@
 use std::f32::NAN;
 use std::cmp;
+use std::ops::Neg;
 
 use crate::decoders::*;
 use crate::decoders::tiff::*;
@@ -13,11 +14,11 @@ pub struct OrfDecoder<'a> {
 }
 
 impl<'a> OrfDecoder<'a> {
-  pub fn new(buf: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> OrfDecoder<'a> {
+  pub fn new(buffer: &'a [u8], tiff: TiffIFD<'a>, rawloader: &'a RawLoader) -> OrfDecoder<'a> {
     OrfDecoder {
-      buffer: buf,
-      tiff: tiff,
-      rawloader: rawloader,
+      buffer,
+      tiff,
+      rawloader,
     }
   }
 }
@@ -106,7 +107,7 @@ impl<'a> OrfDecoder<'a> {
           nbits = cmp::min(nbits, 16);
           let b = pump.peek_ibits(15);
 
-          let sign: i32 = (b >> 14) * -1;
+          let sign: i32 = Neg::neg(b >> 14);
           let low: i32  = (b >> 12) &  3;
           let mut high: i32 = bittable[(b&4095) as usize] as i32;
 
@@ -168,11 +169,11 @@ impl<'a> OrfDecoder<'a> {
     let redmul = self.tiff.find_entry(Tag::OlympusRedMul);
     let bluemul = self.tiff.find_entry(Tag::OlympusBlueMul);
 
-    if redmul.is_some() && bluemul.is_some() {
-      Ok([redmul.unwrap().get_u32(0) as f32,256.0,bluemul.unwrap().get_u32(0) as f32,NAN])
+    if let (Some(bluemul), Some(redmul)) = (redmul, bluemul) {
+      Ok([redmul.get_u32(0) as f32,256.0,bluemul.get_u32(0) as f32,NAN])
     } else {
       let ifd = self.tiff.find_ifds_with_tag(Tag::OrfBlackLevels);
-      if ifd.len() == 0 {
+      if ifd.is_empty() {
         return Err("ORF: Couldn't find ImgProc IFD".to_string());
       }
       let wbs = fetch_tag!(ifd[0], Tag::ImageWidth);

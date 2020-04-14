@@ -90,9 +90,9 @@ impl CFA {
 
     CFA {
       name: patname.to_string(),
-      pattern: pattern,
-      width: width,
-      height: height,
+      pattern,
+      width,
+      height,
     }
   }
 
@@ -142,8 +142,8 @@ impl CFA {
     }
 
     CFA {
-      name: name,
-      pattern: pattern,
+      name,
+      pattern,
       width: self.width,
       height: self.height,
     }
@@ -163,25 +163,30 @@ impl CFA {
   pub fn is_valid(&self) -> bool {
     self.width != 0 && self.height != 0
   }
+}
 
-  /// Convert the CFA back into a pattern string
-  ///
-  /// # Example
-  /// ```
-  /// use rawloader::CFA;
-  /// let cfa = CFA::new("RGGB");
-  /// assert_eq!(cfa.to_string(), "RGGB");
-  ///
-  /// let shifted = cfa.shift(1,1);
-  /// assert_eq!(shifted.to_string(), "BGGR");
-  /// ```
-  pub fn to_string(&self) -> String {
-    self.name.clone()
-  }
+impl fmt::Display for CFA {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.name)
+    }
 }
 
 impl fmt::Debug for CFA {
   fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
     write!(f, "CFA {{ {} }}", self.name)
+  }
+}
+
+#[cfg(test)]
+mod test {
+  use super::CFA;
+
+  #[test]
+  fn cfa_to_string() {
+    let cfa = CFA::new("RGGB");
+    assert_eq!(cfa.to_string(), "RGGB");
+  
+    let shifted = cfa.shift(1,1);
+    assert_eq!(shifted.to_string(), "BGGR");
   }
 }
